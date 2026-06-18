@@ -62,13 +62,15 @@ PROVISION_DRY_RUN=1 uv run python provision_loop.py
 
 ## Flow
 
-1. `POST /api/internal/servers/provision/pending` with `{ "hostname": "..." }`
-2. For each `pendingGrant`: `isolation/add-user.sh <linuxUsername> --password <password>`
-3. `POST /api/internal/servers/provision/complete`
-4. For each `pendingRevoke`: `isolation/remove-user.sh <linuxUsername> --ignore-missing`
-5. `POST /api/internal/servers/revoke/complete`
+1. `POST /api/internal/servers/provision/pending` with `{ "hostname": "..." }` — see [provision/pending](docs/api_data_formats.md#post-apiinternalserversprovisionpending)
+2. For each `pendingGrants[]` entry: `isolation/add-user.sh <linuxUsername> --password <password>`
+3. `POST /api/internal/servers/provision/complete` — see [provision/complete](docs/api_data_formats.md#post-apiinternalserversprovisioncomplete)
+4. For each `pendingRevokes[]` entry: `isolation/remove-user.sh <linuxUsername> --ignore-missing`
+5. `POST /api/internal/servers/revoke/complete` — see [revoke/complete](docs/api_data_formats.md#post-apiinternalserversrevokecomplete)
 
 Usernames and passwords come from gsad; the provisioner must not generate them.
+
+See [docs/api_data_formats.md](docs/api_data_formats.md) for request/response JSON schemas.
 
 ## Quality checks
 
