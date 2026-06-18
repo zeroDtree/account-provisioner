@@ -13,6 +13,7 @@ import requests
 from dotenv import load_dotenv
 
 from gsad_client import GsadClient
+from health_server import HealthState, load_health_bind, start_health_server
 from isolation_runner import provision_user, revoke_user
 from server_ip import resolve_server_ip
 
@@ -64,7 +65,11 @@ def load_config() -> dict[str, Any]:
     }
 
 
-def _handle_grant(client: GsadClient, config: dict[str, Any], task: dict[str, Any]) -> None:
+def _handle_grant(
+    client: GsadClient,
+    config: dict[str, Any],
+    task: dict[str, Any],
+) -> None:
     hostname = config["hostname"]
     app_id = task["applicationId"]
     linux_username = task["linuxUsername"]
@@ -85,30 +90,44 @@ def _handle_grant(client: GsadClient, config: dict[str, Any], task: dict[str, An
         password=password,
         use_sudo=config["use_sudo"],
     )
-    if result.success:
+    if not result.success:
+        client.complete_provision(
+            application_id=app_id,
+            hostname=hostname,
+            success=False,
+            error_message=result.error_message,
+        )
+        print(
+            f"ERROR provision failed app={app_id} user={linux_username}: {result.error_message}",
+            flush=True,
+        )
+        return
+
+    try:
         server_ip = resolve_server_ip(
             config["server_ip_override"],
             netbird_bin=config["netbird_bin"],
         )
+    except RuntimeError as exc:
         client.complete_provision(
             application_id=app_id,
             hostname=hostname,
-            success=True,
-            server_ip=server_ip,
+            success=False,
+            error_message=str(exc),
         )
-        print(f"INFO provision complete app={app_id} user={linux_username}", flush=True)
+        print(
+            f"ERROR provision serverIp resolution failed app={app_id}: {exc}",
+            flush=True,
+        )
         return
 
     client.complete_provision(
         application_id=app_id,
         hostname=hostname,
-        success=False,
-        error_message=result.error_message,
+        success=True,
+        server_ip=server_ip,
     )
-    print(
-        f"ERROR provision failed app={app_id} user={linux_username}: {result.error_message}",
-        flush=True,
-    )
+    print(f"INFO provision complete app={app_id} user={linux_username}", flush=True)
 
 
 def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, Any]) -> None:
@@ -151,13 +170,23 @@ def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, A
     )
 
 
-def poll_once(client: GsadClient, config: dict[str, Any]) -> None:
+def poll_once(
+    client: GsadClient,
+    config: dict[str, Any],
+    health: HealthState | None,
+) -> None:
     hostname = config["hostname"]
     try:
         data = client.post_pending(hostname)
     except requests.RequestException as exc:
-        print(f"WARN pending poll failed for {hostname}: {exc}", flush=True)
+        msg = f"pending poll failed: {exc}"
+        print(f"WARN {msg} for {hostname}", flush=True)
+        if health is not None:
+            health.record_failure(msg)
         return
+
+    if health is not None:
+        health.record_success()
 
     if not data:
         return
@@ -182,6 +211,13 @@ def main() -> None:
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc
 
+    health: HealthState | None = None
+    bind = load_health_bind()
+    if bind is not None:
+        host, port = bind
+        health = HealthState(agent="account-provisioner", hostname=config["hostname"])
+        start_health_server(health, host, port)
+
     client = GsadClient(config["api_url"], config["agent_psk"])
     print(
         f"account-provisioner polling gsad={config['api_url']} "
@@ -191,7 +227,7 @@ def main() -> None:
     )
 
     while True:
-        poll_once(client, config)
+        poll_once(client, config, health)
         time.sleep(config["poll_interval"])
 
 

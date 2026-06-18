@@ -2,8 +2,6 @@
 
 GPU host agent that polls gsad for pending account grant/revoke tasks and runs the bundled [isolation](isolation/) shell scripts locally.
 
-Contract: [backend/gsad/agent-provision.md](../backend/gsad/agent-provision.md) (when checked out inside `server-manager`).
-
 ## Requirements
 
 - Python 3.11+
@@ -59,6 +57,8 @@ PROVISION_DRY_RUN=1 uv run python provision_loop.py
 | `NETBIRD_BIN`             | NetBird CLI path (default `netbird`)                               |
 | `PROVISION_USE_SUDO`      | Use `sudo -n` when not root (default `1`)                          |
 | `PROVISION_DRY_RUN`       | Log only, no exec or complete callbacks                            |
+| `AGENT_HEALTH_HOST`       | Health bind address (default `127.0.0.1`)                          |
+| `AGENT_HEALTH_PORT`       | Health HTTP port (default `9091`; `0` disables)                    |
 
 ## Flow
 
@@ -69,25 +69,6 @@ PROVISION_DRY_RUN=1 uv run python provision_loop.py
 5. `POST /api/internal/servers/revoke/complete`
 
 Usernames and passwords come from gsad; the provisioner must not generate them.
-
-## systemd example
-
-```ini
-[Unit]
-Description=GSAD account provisioner
-After=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/account-provisioner
-EnvironmentFile=/opt/account-provisioner/.env
-ExecStart=/usr/local/bin/uv run python provision_loop.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
 
 ## Quality checks
 
