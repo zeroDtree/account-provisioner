@@ -1,0 +1,3 @@
+[submodule "isolation"]
+	path = isolation
+	url = git@github.com:zeroDtree/isolation.git
