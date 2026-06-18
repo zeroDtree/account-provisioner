@@ -1,6 +1,6 @@
 # account-provisioner
 
-GPU host agent that polls gsad for pending account grant/revoke tasks and runs the bundled [isolation](isolation/) shell scripts locally.
+GPU host agent that polls gsad (GPU Server Access Dashboard) for pending account grant/revoke tasks and runs the bundled [isolation](isolation/) shell scripts locally.
 
 ## Requirements
 

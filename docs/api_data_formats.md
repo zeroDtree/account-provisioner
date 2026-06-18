@@ -1,6 +1,6 @@
 # API data formats
 
-All gsad internal routes use **camelCase** JSON. Full backend contract: [backend/gsad/agent-provision.md](../../../backend/gsad/agent-provision.md).
+All gsad (GPU Server Access Dashboard) internal routes use **camelCase** JSON. Full backend contract: [backend/gsad/agent-provision.md](../../../backend/gsad/agent-provision.md).
 
 ## Authentication
 
@@ -50,7 +50,7 @@ Poll pending grant/revoke tasks for this host.
 | `linuxUsername` | yes           | Passed to `add-user.sh`                                       |
 | `password`      | yes           | Passed to `add-user.sh` (gsad-supplied; agent must not alter) |
 | `email`         | no            | Context only                                                  |
-| `serverId`      | no            | Derived from hostname (strip trailing `.internal`)            |
+| `serverId`      | no            | Same as agent `hostname` / gsad `server_id`                     |
 | `resourceLevel` | no            | Resource tier label                                           |
 
 **`pendingRevokes[]` fields:**
@@ -102,7 +102,7 @@ Success:
 ```json
 {
   "applicationId": "app-abc12345",
-  "hostname": "gpu-mock-004.internal",
+  "hostname": "gpu-mock-004",
   "success": true,
   "serverIp": "10.0.1.5",
   "errorMessage": null
@@ -114,7 +114,7 @@ Failure:
 ```json
 {
   "applicationId": "app-abc12345",
-  "hostname": "gpu-mock-004.internal",
+  "hostname": "gpu-mock-004",
   "success": false,
   "serverIp": null,
   "errorMessage": "isolation script failed: ..."
@@ -139,7 +139,7 @@ Success:
 ```json
 {
   "applicationId": "app-def67890",
-  "hostname": "gpu-mock-004.internal",
+  "hostname": "gpu-mock-004",
   "success": true,
   "errorMessage": null
 }
@@ -150,7 +150,7 @@ Failure:
 ```json
 {
   "applicationId": "app-def67890",
-  "hostname": "gpu-mock-004.internal",
+  "hostname": "gpu-mock-004",
   "success": false,
   "errorMessage": "isolation script failed: ..."
 }
@@ -175,7 +175,7 @@ Example:
 {
   "ok": true,
   "agent": "account-provisioner",
-  "hostname": "gpu-node-01.internal",
+  "hostname": "gpu-node-01",
   "lastPollAt": "2026-06-18T12:00:00+00:00",
   "lastPollOk": true,
   "lastError": null
