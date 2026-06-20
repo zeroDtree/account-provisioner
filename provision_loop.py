@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import socket
 import sys
 import time
 from pathlib import Path
@@ -12,7 +11,7 @@ from typing import Any
 import requests
 from dotenv import load_dotenv
 
-from gsad_client import GsadClient
+from upstream_api_client import UpstreamApiClient
 from health_server import HealthState, load_health_bind, start_health_server
 from isolation_runner import provision_user, revoke_user
 from server_ip import resolve_server_ip
@@ -31,13 +30,17 @@ def _env_bool(name: str, default: bool) -> bool:
 def load_config() -> dict[str, Any]:
     load_dotenv()
 
-    api_url = os.getenv("GSAD_API_URL", "http://localhost:8080").rstrip("/")
+    api_url = os.getenv("UPSTREAM_API_URL", "http://localhost:8080").rstrip("/")
     agent_psk = os.getenv("AGENT_PSK", "").strip()
     if not agent_psk:
         msg = "AGENT_PSK is required"
         raise ValueError(msg)
 
-    hostname = os.getenv("AGENT_HOSTNAME", "").strip() or socket.gethostname()
+    server_id = os.getenv("AGENT_SERVER_ID", "").strip()
+    if not server_id:
+        msg = "AGENT_SERVER_ID is required"
+        raise ValueError(msg)
+
     poll_interval = max(5, int(os.getenv("PROVISION_POLL_INTERVAL", "30")))
 
     isolation_dir = Path(os.getenv("ISOLATION_DIR", str(DEFAULT_ISOLATION_DIR))).resolve()
@@ -54,7 +57,7 @@ def load_config() -> dict[str, Any]:
     return {
         "api_url": api_url,
         "agent_psk": agent_psk,
-        "hostname": hostname,
+        "server_id": server_id,
         "poll_interval": poll_interval,
         "isolation_dir": isolation_dir,
         "data_root": data_root,
@@ -66,11 +69,11 @@ def load_config() -> dict[str, Any]:
 
 
 def _handle_grant(
-    client: GsadClient,
+    client: UpstreamApiClient,
     config: dict[str, Any],
     task: dict[str, Any],
 ) -> None:
-    hostname = config["hostname"]
+    server_id = config["server_id"]
     app_id = task["applicationId"]
     linux_username = task["linuxUsername"]
     password = task["password"]
@@ -93,7 +96,7 @@ def _handle_grant(
     if not result.success:
         client.complete_provision(
             application_id=app_id,
-            hostname=hostname,
+            server_id=server_id,
             success=False,
             error_message=result.error_message,
         )
@@ -111,7 +114,7 @@ def _handle_grant(
     except RuntimeError as exc:
         client.complete_provision(
             application_id=app_id,
-            hostname=hostname,
+            server_id=server_id,
             success=False,
             error_message=str(exc),
         )
@@ -123,15 +126,15 @@ def _handle_grant(
 
     client.complete_provision(
         application_id=app_id,
-        hostname=hostname,
+        server_id=server_id,
         success=True,
         server_ip=server_ip,
     )
     print(f"INFO provision complete app={app_id} user={linux_username}", flush=True)
 
 
-def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, Any]) -> None:
-    hostname = config["hostname"]
+def _handle_revoke(client: UpstreamApiClient, config: dict[str, Any], task: dict[str, Any]) -> None:
+    server_id = config["server_id"]
     app_id = task["applicationId"]
     linux_username = task["linuxUsername"]
 
@@ -152,7 +155,7 @@ def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, A
     if result.success:
         client.complete_revoke(
             application_id=app_id,
-            hostname=hostname,
+            server_id=server_id,
             success=True,
         )
         print(f"INFO revoke complete app={app_id} user={linux_username}", flush=True)
@@ -160,7 +163,7 @@ def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, A
 
     client.complete_revoke(
         application_id=app_id,
-        hostname=hostname,
+        server_id=server_id,
         success=False,
         error_message=result.error_message,
     )
@@ -171,16 +174,16 @@ def _handle_revoke(client: GsadClient, config: dict[str, Any], task: dict[str, A
 
 
 def poll_once(
-    client: GsadClient,
+    client: UpstreamApiClient,
     config: dict[str, Any],
     health: HealthState | None,
 ) -> None:
-    hostname = config["hostname"]
+    server_id = config["server_id"]
     try:
-        data = client.post_pending(hostname)
+        data = client.post_pending(server_id)
     except requests.RequestException as exc:
         msg = f"pending poll failed: {exc}"
-        print(f"WARN {msg} for {hostname}", flush=True)
+        print(f"WARN {msg} for {server_id}", flush=True)
         if health is not None:
             health.record_failure(msg)
         return
@@ -215,13 +218,13 @@ def main() -> None:
     bind = load_health_bind()
     if bind is not None:
         host, port = bind
-        health = HealthState(agent="account-provisioner", hostname=config["hostname"])
+        health = HealthState(agent="account-provisioner", server_id=config["server_id"])
         start_health_server(health, host, port)
 
-    client = GsadClient(config["api_url"], config["agent_psk"])
+    client = UpstreamApiClient(config["api_url"], config["agent_psk"])
     print(
-        f"account-provisioner polling gsad={config['api_url']} "
-        f"hostname={config['hostname']} interval={config['poll_interval']}s "
+        f"account-provisioner polling api={config['api_url']} "
+        f"server_id={config['server_id']} interval={config['poll_interval']}s "
         f"isolation={config['isolation_dir']} dry_run={config['dry_run']}",
         flush=True,
     )

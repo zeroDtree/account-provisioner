@@ -1,4 +1,4 @@
-"""Lightweight localhost HTTP health endpoint for GSAD host agents."""
+"""Lightweight localhost HTTP health endpoint for host agents."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 @dataclass
 class HealthState:
     agent: str
-    hostname: str
+    server_id: str
     last_ok: bool = True
     last_error: str | None = None
     last_event_at: str | None = None
@@ -41,15 +41,12 @@ class HealthState:
             body: dict[str, Any] = {
                 "ok": self.last_ok,
                 "agent": self.agent,
-                "hostname": self.hostname,
+                "serverId": self.server_id,
                 "lastError": self.last_error,
             }
             if self.agent == "account-provisioner":
                 body["lastPollAt"] = self.last_event_at
                 body["lastPollOk"] = self.last_ok
-            elif self.agent == "gpu-server-report":
-                body["lastReportAt"] = self.last_event_at
-                body["lastReportOk"] = self.last_ok
             else:
                 body["lastEventAt"] = self.last_event_at
             body.update(self.extra)

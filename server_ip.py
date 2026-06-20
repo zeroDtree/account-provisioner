@@ -1,4 +1,4 @@
-"""Detect the host IP reported to gsad on successful provision."""
+"""Detect the host IP reported to the API on successful provision."""
 
 from __future__ import annotations
 

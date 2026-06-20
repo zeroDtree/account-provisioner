@@ -1,4 +1,4 @@
-"""GSAD internal API client for account provision."""
+"""Upstream API client for account provision."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 import requests
 
 
-class GsadClient:
+class UpstreamApiClient:
     def __init__(self, api_url: str, agent_psk: str, *, timeout: float = 30.0) -> None:
         self._api_url = api_url.rstrip("/")
         self._headers = {
@@ -17,11 +17,11 @@ class GsadClient:
         self._timeout = timeout
         self._session = requests.Session()
 
-    def post_pending(self, hostname: str) -> dict[str, Any] | None:
+    def post_pending(self, server_id: str) -> dict[str, Any] | None:
         url = f"{self._api_url}/api/internal/servers/provision/pending"
         resp = self._session.post(
             url,
-            json={"hostname": hostname},
+            json={"serverId": server_id},
             headers=self._headers,
             timeout=self._timeout,
         )
@@ -39,7 +39,7 @@ class GsadClient:
         self,
         *,
         application_id: str,
-        hostname: str,
+        server_id: str,
         success: bool,
         server_ip: str | None = None,
         error_message: str | None = None,
@@ -47,7 +47,7 @@ class GsadClient:
         url = f"{self._api_url}/api/internal/servers/provision/complete"
         body = {
             "applicationId": application_id,
-            "hostname": hostname,
+            "serverId": server_id,
             "success": success,
             "serverIp": server_ip,
             "errorMessage": error_message,
@@ -59,14 +59,14 @@ class GsadClient:
         self,
         *,
         application_id: str,
-        hostname: str,
+        server_id: str,
         success: bool,
         error_message: str | None = None,
     ) -> None:
         url = f"{self._api_url}/api/internal/servers/revoke/complete"
         body = {
             "applicationId": application_id,
-            "hostname": hostname,
+            "serverId": server_id,
             "success": success,
             "errorMessage": error_message,
         }
