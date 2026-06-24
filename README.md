@@ -15,7 +15,7 @@ Required env: `AGENT_SERVER_ID`, `AGENT_PSK`, `UPSTREAM_API_URL`. See [.env.exam
 
 ## Upstream API
 
-All routes need `Content-Type: application/json`, `X-Agent-Server-Id: <AGENT_SERVER_ID>`, and `X-Agent-PSK: <derived AGENT_PSK>`.
+All routes need `Content-Type: application/json`, `X-Agent-Server-Id: <AGENT_SERVER_ID>`, and `X-Agent-PSK: <AGENT_PSK>`.
 
 **Credentials:** the API supplies `linuxUsername` + `password`; this agent must not alter them. Sends `serverIp` on grant complete.
 
