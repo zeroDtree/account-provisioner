@@ -221,7 +221,7 @@ def main() -> None:
         health = HealthState(agent="account-provisioner", server_id=config["server_id"])
         start_health_server(health, host, port)
 
-    client = UpstreamApiClient(config["api_url"], config["agent_psk"])
+    client = UpstreamApiClient(config["api_url"], config["agent_psk"], config["server_id"])
     print(
         f"account-provisioner polling api={config['api_url']} "
         f"server_id={config['server_id']} interval={config['poll_interval']}s "

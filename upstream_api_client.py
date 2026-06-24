@@ -8,11 +8,18 @@ import requests
 
 
 class UpstreamApiClient:
-    def __init__(self, api_url: str, agent_psk: str, *, timeout: float = 30.0) -> None:
+    def __init__(
+            self,
+            api_url: str,
+            agent_psk: str,
+            server_id: str,
+            *,
+            timeout: float = 30.0) -> None:
         self._api_url = api_url.rstrip("/")
         self._headers = {
             "Content-Type": "application/json",
             "X-Agent-PSK": agent_psk,
+            "X-Agent-Server-Id": server_id,
         }
         self._timeout = timeout
         self._session = requests.Session()
