@@ -8,6 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+_DEFAULT_ADD_USER_EXTRA_ARGS: tuple[str, ...] = (
+    "--with-install-miniconda",
+    "--with-install-rootless-docker",
+)
+
+
 @dataclass(frozen=True)
 class RunResult:
     success: bool
@@ -38,7 +44,7 @@ def provision_user(
     linux_username: str,
     password: str,
     use_sudo: bool,
-    timeout: float = 600.0,
+    timeout: float = 1200.0,
 ) -> RunResult:
     script = isolation_dir / "add-user.sh"
     if not script.is_file():
@@ -48,7 +54,7 @@ def provision_user(
     env["DATA_ROOT"] = data_root
     cmd = _build_command(
         script,
-        [linux_username, "--password", password],
+        [linux_username, "--password", password, *_DEFAULT_ADD_USER_EXTRA_ARGS],
         use_sudo=use_sudo,
     )
     proc = subprocess.run(
