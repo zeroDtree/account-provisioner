@@ -77,10 +77,12 @@ def _handle_grant(
     app_id = task["applicationId"]
     linux_username = task["linuxUsername"]
     password = task["password"]
+    install_miniconda = bool(task.get("installMiniconda", False))
 
     if config["dry_run"]:
         print(
             f"DRY_RUN grant app={app_id} user={linux_username} "
+            f"install_miniconda={install_miniconda} "
             f"isolation={config['isolation_dir']}",
             flush=True,
         )
@@ -91,6 +93,7 @@ def _handle_grant(
         data_root=config["data_root"],
         linux_username=linux_username,
         password=password,
+        install_miniconda=install_miniconda,
         use_sudo=config["use_sudo"],
     )
     if not result.success:
