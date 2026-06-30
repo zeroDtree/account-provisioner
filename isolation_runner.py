@@ -42,7 +42,6 @@ def provision_user(
     data_root: str,
     linux_username: str,
     password: str,
-    install_miniconda: bool,
     use_sudo: bool,
     timeout: float = 1200.0,
 ) -> RunResult:
@@ -50,20 +49,11 @@ def provision_user(
     if not script.is_file():
         return RunResult(False, f"missing script: {script}")
 
-    miniconda_flag = (
-        "--with-install-miniconda" if install_miniconda else "--no-install-miniconda"
-    )
     env = os.environ.copy()
     env["DATA_ROOT"] = data_root
     cmd = _build_command(
         script,
-        [
-            linux_username,
-            "--password",
-            password,
-            miniconda_flag,
-            *_DEFAULT_ADD_USER_EXTRA_ARGS,
-        ],
+        [linux_username, "--password", password, *_DEFAULT_ADD_USER_EXTRA_ARGS],
         use_sudo=use_sudo,
     )
     proc = subprocess.run(
