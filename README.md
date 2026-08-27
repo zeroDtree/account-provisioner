@@ -5,6 +5,7 @@ Polls the upstream API for pending grant/revoke tasks and runs [isolation](isola
 ## Run
 
 ```bash
+git submodule update --init --recursive
 uv sync && cp .env.example .env
 uv run python provision_loop.py
 ```
@@ -22,7 +23,7 @@ All routes need `Content-Type: application/json`, `X-Agent-Server-Id: <AGENT_SER
 ### Flow
 
 1. `POST /api/internal/servers/provision/pending` — `{ "serverId": "<AGENT_SERVER_ID>" }`
-2. For each grant: `isolation/add-user.sh <linuxUsername> --password <password> --with-install-rootless-docker` (copies `~/shell_utils/install_miniconda.sh` only; rootless Docker prep configures subuid/subgid, linger, and shell env)
+2. For each grant: `isolation/add-user.sh <linuxUsername> --password <password> --with-install-rootless-docker` (applies templates and copies `isolation/shell_script/` → `~/shell_script`; rootless Docker prep requires subuid/subgid, enables linger, and appends shell env)
 3. `POST /api/internal/servers/provision/complete`
 4. For each revoke: `isolation/remove-user.sh <linuxUsername> --ignore-missing`
 5. `POST /api/internal/servers/revoke/complete`
