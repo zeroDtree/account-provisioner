@@ -18,7 +18,7 @@ Required env: `AGENT_SERVER_ID`, `AGENT_PSK`, `UPSTREAM_API_URL`. See [.env.exam
 
 All routes need `Content-Type: application/json`, `X-Agent-Server-Id: <AGENT_SERVER_ID>`, and `X-Agent-PSK: <AGENT_PSK>`.
 
-**Credentials:** the API supplies `linuxUsername` + `password`; this agent must not alter them. Sends `serverIp` on grant complete.
+**Credentials:** the API supplies `linuxUsername` + `password`; this agent must not alter them. Sends `serverIp` on grant complete from the IPv4 hook script (`hooks/ipv4.sh` by default, or `PROVISION_IPV4_CALLBACK`).
 
 ### Flow
 

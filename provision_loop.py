@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from upstream_api_client import UpstreamApiClient
 from health_server import HealthState, load_health_bind, start_health_server
 from isolation_runner import provision_user, revoke_user
-from server_ip import resolve_server_ip
+from server_ip import DEFAULT_IPV4_SCRIPT, resolve_server_ip
 
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_ISOLATION_DIR = REPO_ROOT / "isolation"
@@ -49,8 +49,10 @@ def load_config() -> dict[str, Any]:
         msg = f"DATA_ROOT must be an absolute path (got: {data_root!r})"
         raise ValueError(msg)
 
-    server_ip_override = os.getenv("PROVISION_SERVER_IP", "").strip() or None
-    netbird_bin = os.getenv("NETBIRD_BIN", "netbird").strip() or "netbird"
+    raw_callback = os.getenv("PROVISION_IPV4_CALLBACK", "").strip()
+    ipv4_callback = (
+        Path(raw_callback).expanduser().resolve() if raw_callback else DEFAULT_IPV4_SCRIPT
+    )
     use_sudo = _env_bool("PROVISION_USE_SUDO", True)
     dry_run = _env_bool("PROVISION_DRY_RUN", False)
 
@@ -61,8 +63,7 @@ def load_config() -> dict[str, Any]:
         "poll_interval": poll_interval,
         "isolation_dir": isolation_dir,
         "data_root": data_root,
-        "server_ip_override": server_ip_override,
-        "netbird_bin": netbird_bin,
+        "ipv4_callback": ipv4_callback,
         "use_sudo": use_sudo,
         "dry_run": dry_run,
     }
@@ -107,10 +108,7 @@ def _handle_grant(
         return
 
     try:
-        server_ip = resolve_server_ip(
-            config["server_ip_override"],
-            netbird_bin=config["netbird_bin"],
-        )
+        server_ip = resolve_server_ip(config["ipv4_callback"])
     except RuntimeError as exc:
         client.complete_provision(
             application_id=app_id,
