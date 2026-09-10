@@ -30,7 +30,14 @@ def _env_bool(name: str, default: bool) -> bool:
 def load_config() -> dict[str, Any]:
     load_dotenv()
 
-    api_url = os.getenv("UPSTREAM_API_URL", "http://localhost:8080").rstrip("/")
+    api_url = ""
+    for name in ("UPSTREAM_API_URL", "REPORT_API_URL"):
+        raw = os.getenv(name)
+        if raw is not None and raw.strip():
+            api_url = raw.strip().rstrip("/")
+            break
+    if not api_url:
+        api_url = "http://localhost:8080"
     agent_psk = os.getenv("AGENT_PSK", "").strip()
     if not agent_psk:
         msg = "AGENT_PSK is required"

@@ -12,7 +12,7 @@ uv run python provision_loop.py
 
 Dry run: `PROVISION_DRY_RUN=1 uv run python provision_loop.py`
 
-Required env: `AGENT_SERVER_ID`, `AGENT_PSK`, `UPSTREAM_API_URL`. See [.env.example](.env.example) for all options.
+Required env: `AGENT_SERVER_ID`, `AGENT_PSK`, and `UPSTREAM_API_URL` (or `REPORT_API_URL`). See [.env.example](.env.example) for all options.
 
 ## Upstream API
 
